@@ -9,10 +9,6 @@ public class StorageInfo {
     // Constructor
     public StorageInfo() {}
 
-    // Class methods
-    public void printFields() {
-        System.out.println("String: ");
-    }
 
 }
 

@@ -13,10 +13,5 @@ public class CargoInfo {
     // Constructor
     public CargoInfo() {}
 
-    // Class methods
-    public void printFields() {
-        System.out.println("String: ");
-    }
-
 }
 

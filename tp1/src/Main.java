@@ -12,6 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.io.File;
+import java.text.DecimalFormat;
+import java.math.RoundingMode;
 
 public class Main {
 
@@ -66,7 +69,7 @@ public class Main {
             List<StorageInfo> storageLocationsObj = new ArrayList<>();
             int counter = 0;
             while ((line = reader.readLine()) != null) {
-                System.out.println(line);
+                //System.out.println(line); // Print out the line
                 if (counter == 0)
                 {
                     String[] parts = line.split(" ");
@@ -125,7 +128,10 @@ public class Main {
 
     public static String printData(double distance, int number_of_boxes, double latitude, double longitude)
     {
-        String text = "Distance:" + distance + "\tNumber of boxes:" + number_of_boxes + "\tPosition:(" + latitude + "," + longitude +")\n";
+        DecimalFormat df = new DecimalFormat("0.0");
+        df.setRoundingMode(RoundingMode.HALF_UP);
+        String roundedNumber = df.format(distance);
+        String text = "Distance:" + roundedNumber + "\tNumber of boxes:" + number_of_boxes + "\tPosition:(" + latitude + "," + longitude +")\n";
         System.out.println(text);
         return text;
     }
@@ -141,6 +147,8 @@ public class Main {
             return (-cargoobj.remainingBoxes);
         }
     }
+
+
     public static void algorithm(CargoInfo cargoobj)
     {
 
@@ -153,31 +161,64 @@ public class Main {
 
             // Start by swapping the largest index to slot 1
             cargoobj.storageLocations = swap(cargoobj.storageLocations, 0, cargoobj.indexLargestStorage);
+            cargoobj.remainingBoxes -= cargoobj.storageLocations.get(0).boxStorage;
 
             String text = "Truck Position: (" + cargoobj.storageLocations.get(0).latitude + "," + cargoobj.storageLocations.get(0).longitude + ")\n";
-            System.out.println("Truck Position: (" + cargoobj.storageLocations.get(0).latitude + "," + cargoobj.storageLocations.get(0).longitude + ")");
+            System.out.println(text);
             bufferedWriter.write(text);
             text = printData(0.0, calculateRemainingStorage(cargoobj), cargoobj.storageLocations.get(0).latitude, cargoobj.storageLocations.get(0).longitude);
             bufferedWriter.write(text);
+            if (calculateRemainingStorage(cargoobj) > 0)
+            {
+                bufferedWriter.close();
+                return;
+            }
 
             // Nearest Neighbor Algorithm
             for (int i = 0; i < cargoobj.storageLocations.size(); i++)
             {
-                double distance = 99999999;
+                double distance = 99999999; // Arbitrarily large number
                 int index = 0;
                 for (int j = i+1; j < cargoobj.storageLocations.size(); j++)
                 {
                     // Calculate distance between current node and secondary nodes
-                    double calculatedDistance = calculateDistance(cargoobj.storageLocations.get(i).latitude, cargoobj.storageLocations.get(i).longitude,
+                    double calculatedDistance = calculateDistance(cargoobj.storageLocations.get(0).latitude, cargoobj.storageLocations.get(0).longitude,
                             cargoobj.storageLocations.get(j).latitude, cargoobj.storageLocations.get(j).longitude);
-                    if (calculatedDistance <= distance)
+
+                    // System.out.println("Distance Calculated = " + calculatedDistance + " between coordinate ("+cargoobj.storageLocations.get(i).latitude + "," + cargoobj.storageLocations.get(i).longitude+ ") and ("+cargoobj.storageLocations.get(j).latitude+","+cargoobj.storageLocations.get(j).longitude+")");
+                    if (calculatedDistance < distance)
                     {
                         // Update distance and index
                         distance = calculatedDistance;
                         index = j;
                     }
+                    else if(calculatedDistance == distance)
+                    {
+                        // We must take one with lower latitude
+                        if (cargoobj.storageLocations.get(i).latitude == cargoobj.storageLocations.get(j).latitude)
+                        {
+                            // If latitudes are same, we must take lower longitude
+                            if (cargoobj.storageLocations.get(i).longitude == cargoobj.storageLocations.get(j).longitude)
+                            {
+                                // Update the index
+                                index = j;
+                            }
+
+                        }
+                        // Latitude of new point is smaller, update the index
+                        else if (cargoobj.storageLocations.get(i).latitude > cargoobj.storageLocations.get(j).latitude)
+                        {
+                            index = j;
+                        }
+
+                    }
                 }
                 cargoobj.remainingBoxes -= cargoobj.storageLocations.get(index).boxStorage;
+                if (distance == 99999999 && cargoobj.remainingBoxes != 0)
+                {
+                    bufferedWriter.close();
+                    return;
+                }
                 text = printData(distance, calculateRemainingStorage(cargoobj), cargoobj.storageLocations.get(index).latitude, cargoobj.storageLocations.get(index).longitude);
                 bufferedWriter.write(text);
                 if (calculateRemainingStorage(cargoobj) > 0)
@@ -186,7 +227,7 @@ public class Main {
                     return;
                 }
                 // Perform the swap
-                cargoobj.storageLocations = swap(cargoobj.storageLocations, i, index);
+                cargoobj.storageLocations = swap(cargoobj.storageLocations, i+1, index);
             }
 
             bufferedWriter.close();
@@ -198,34 +239,44 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        // Get Current Working Directory
-        String currentDirectory = System.getProperty("user.dir");
-        Path existingDirectory = Paths.get(currentDirectory);  // Convert to Path Object
-        Path dataDirectoryPath = existingDirectory.resolve("data_files"); // Append the new directory to the existing path
-        String dataDirectory = dataDirectoryPath.toString();
-        System.out.println("Current Directory: " + currentDirectory);
-        System.out.println("Data Directory: " + dataDirectory);
 
-
-        if (args.length < 2)
+        // Perform program input checking
+        if (args.length != 2)
         {
+            System.out.println("Incorrect number of arguments. Exiting");
             return;
         }
-        String inputFile =  args[0];
-        String outputFile = args[1];
+        String inputFileStr =  args[0];
+        String outputFileStr = args[1];
 
-        Path fileFullPath = dataDirectoryPath.resolve(inputFile);
+        // Get Current Working Directory
+        String currentDirectory = System.getProperty("user.dir");
+        Path existingDirectory = Paths.get(currentDirectory);
+        Path fileFullPath = existingDirectory.resolve(inputFileStr);
+        File inputFileObj = new File(fileFullPath.toString());
 
-        //List<Path> fileList = new ArrayList<>();
-        //fileList = getInputFiles(dataDirectory); // Use this to get all files in the data directory
+        // Check if input file exists
+        if (!inputFileObj.exists()) {
+            System.out.println(inputFileStr + " does not exist. Exiting");
+            return;
+        }
 
+
+//        double dist1 = calculateDistance(45.4383, -73.8205,45.4977 ,-73.714);
+//        double dist2 = calculateDistance(45.4383, -73.8205,45.5092 ,-73.5682);
+
+        long startTime = System.nanoTime(); // Start timer
+        // Begin file processing
         CargoInfo cargoobj = new CargoInfo();
         cargoobj = processFile(fileFullPath.toString());
-        cargoobj.outputFile = outputFile;
+        cargoobj.outputFile = outputFileStr;
 
         algorithm(cargoobj);
 
+        long endTime = System.nanoTime(); // End timer
+        long elapsedTime = endTime - startTime;
+        double elapsedTimeInSeconds = elapsedTime / 1_000_000_000.0;
 
-
+        System.out.println("Terminated in " + elapsedTimeInSeconds + " seconds");
     }
 }
