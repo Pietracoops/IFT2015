@@ -5,24 +5,18 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.io.File;
-import java.text.DecimalFormat;
-import java.math.RoundingMode;
 import java.util.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Random;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Arrays;
 import java.util.Comparator;
+import java.util.*;
 
 public class Main {
 
@@ -76,19 +70,22 @@ public class Main {
                     {
                         currentDate = format.parse(parts[1]);
                         String formattedDate = format.format(currentDate);
+                        // Remove all expired nodes
+                        btsStorage.removeExpiredNodes(currentDate);
                         if (commandeMap.size() == 0)
                         {
                             bufferedWriter.write(formattedDate + " OK\n");
-                            bufferedWriter.write("\n");
                         }
                         else
                         {
-                            bufferedWriter.write(formattedDate + " COMMANDES\n");
-                            for (Map.Entry<String, Integer> entry : commandeMap.entrySet()) 
+                            bufferedWriter.write(formattedDate + " COMMANDES :\n");
+                            Map<String, Integer> sortedMap = new TreeMap<>(commandeMap);
+                            for (Map.Entry<String, Integer> entry : sortedMap.entrySet()) 
                             {
                                 bufferedWriter.write(entry.getKey() + " " + entry.getValue() + "\n");
                             }
-                            bufferedWriter.write("\n");
+                            // Clear the Command Map
+                            commandeMap.clear();
                         }
 
                     } catch (ParseException e)
@@ -96,8 +93,6 @@ public class Main {
                         e.printStackTrace();
                     }
 
-
-                    continue;
                 }
                 else if (line.contains("STOCK"))
                 {
@@ -113,7 +108,6 @@ public class Main {
                         bufferedWriter.write(element + "\n");
                     }
                     
-                    bufferedWriter.write("\n");
 
                 }
                 else if (line.contains("PRESCRIPTION"))
@@ -123,7 +117,8 @@ public class Main {
                     prescriptionNum++;
                     continue;
                 }
-                else if (line.contains(";"))
+                
+                if (line.contains(";"))
                 {
                     if (mode == 0)
                     {
@@ -143,41 +138,31 @@ public class Main {
                     tmpList.removeIf(String::isEmpty);
                     parts = tmpList.toArray(new String[0]);
 
-                    Pattern pattern = Pattern.compile("\\d+$"); // Find the numbers at end of string
-                    Matcher matcher = pattern.matcher(parts[0]);
-                    Random random = new Random();
-                    Node medinfoObj = new Node(random.nextInt() & Integer.MAX_VALUE);
-                    int Quantity = 0;
-
-                    if (matcher.find())
-                    {
-                        String numberString = matcher.group();
-                        medinfoObj.MedicationNumber = Integer.parseInt(numberString);
-                    }
-                    medinfoObj.Name = parts[0];
-
-                    Quantity = Integer.parseInt(parts[1]) * Integer.parseInt(parts[2]);
+                    
+                    String name = parts[0];
+                    int Quantity = Integer.parseInt(parts[1]) * Integer.parseInt(parts[2]);
+                    Commande commObj = new Commande(name, Quantity, currentDate);
 
                     // check if it is in binary tree structure
-                    if (btsStorage.processNode(medinfoObj.MedicationNumber, Quantity, currentDate))
+                    if (btsStorage.processNode(commObj.Name, commObj.Quantity, commObj.RequiredDate, currentDate))
                     {
                         // If in tree, subtract the current amount from
-                        bufferedWriter.write(medinfoObj.Name + " " + parts[1] + " " + parts[2] + "  " + "OK\n");
+                        bufferedWriter.write(commObj.Name + " " + parts[1] + " " + parts[2] + "  " + "OK\n");
                     }
                     else
                     {
                         // Check if name already in list and add onto it
-                        if (commandeMap.containsKey(medinfoObj.Name))
+                        if (commandeMap.containsKey(commObj.Name))
                         {
-                            int newCommandeValue = commandeMap.get(medinfoObj.Name) + Quantity;
-                            commandeMap.put(medinfoObj.Name, newCommandeValue);
+                            int newCommandeValue = commandeMap.get(commObj.Name) + commObj.Quantity;
+                            commandeMap.put(commObj.Name, newCommandeValue);
                         }
                         else
                         {
-                            commandeMap.put(medinfoObj.Name, Quantity);
+                            commandeMap.put(commObj.Name, commObj.Quantity);
                         }
 
-                        bufferedWriter.write(medinfoObj.Name + " " + parts[1] + " " + parts[2] + "  " + "COMMANDE\n");
+                        bufferedWriter.write(commObj.Name + " " + parts[1] + " " + parts[2] + "  " + "COMMANDE\n");
                     }
                 }
 
@@ -186,50 +171,41 @@ public class Main {
                     // Approv
                     line = line.replaceAll("\t", " ");
                     String[] parts = line.split(" ");
-                    Pattern pattern = Pattern.compile("\\d+$"); // Find the numbers at end of string
-                    Matcher matcher = pattern.matcher(parts[0]);
-                    Random random = new Random();
-                    Node medinfoObj = new Node(random.nextInt() & Integer.MAX_VALUE);
 
-                    if (matcher.find()) 
-                    {
-                    String numberString = matcher.group();
-                    medinfoObj.MedicationNumber = Integer.parseInt(numberString);
-                    }
+                    String name = parts[0];
+                    int Quantity = Integer.parseInt(parts[1]);
+                    Date ExpireDate = currentDate;
 
                     // Adding to the stock
-                    medinfoObj.Name = parts[0];
-                    Medication medObj = new Medication();
-                    medObj.Quantity = Integer.parseInt(parts[1]);
                     try 
                     {
-                        medObj.ExpireDate = format.parse(parts[2]);
+                        ExpireDate = format.parse(parts[2]);
                     } catch (ParseException e) 
                     {
                         e.printStackTrace();
                     }
 
+                    Node medObj = new Node(ExpireDate, name, Quantity);
+
                     // check if it is in binary tree structure
-                    Node foundNode = btsStorage.containsNode(medinfoObj.MedicationNumber);
+                    Node foundNode = btsStorage.containsNode(ExpireDate);
                     if (foundNode != null)
                     {
                         // If in tree, append the Medication to the medinfo object
-                        foundNode.medicationStores.add(medObj);
-                                // Sort the list of medObj objects based on the Date parameter
-                        foundNode.medicationStores.sort(new Comparator<Medication>()
-                        {
-                            @Override
-                            public int compare(Medication obj1, Medication obj2) {
-                                return obj1.ExpireDate.compareTo(obj2.ExpireDate);
-                            }
-                        });
+                        foundNode.medicationStores.add(medObj.medicationStores.get(0));
+                        // Sort the list of medObj objects based on the Date parameter
+                        //foundNode.medicationStores.sort(new Comparator<Medication>()
+                        // {
+                        //     @Override
+                        //     public int compare(Medication obj1, Medication obj2) {
+                        //         return obj1.ExpireDate.compareTo(obj2.ExpireDate);
+                        //     }
+                        // });
                     }
                     else
                     {
-                        // If not in tree, append the Medication to the original medinfo object and add the medinfo object to the BTS
-                        medinfoObj.medicationStores.add(medObj);
                         //btsStorage.add(medinfoObj);
-                        btsStorage.addBalanced(medinfoObj);
+                        btsStorage.addBalanced(medObj);
                     }
 
 
