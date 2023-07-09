@@ -1,6 +1,8 @@
 import java.util.Date;
 import java.util.Calendar;
-public class Commande {
+
+public class Commande 
+{
     String Name;
     int Quantity;
     Date RequiredDate;

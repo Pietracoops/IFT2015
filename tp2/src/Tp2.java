@@ -13,14 +13,18 @@ import java.util.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Comparator;
 import java.util.*;
 
-public class Main {
+public class Tp2 {
 
-    static class MedicationComparator implements Comparator<String> {
+    /**
+     * A comparator for sorting medication objects based on their names.
+     * Implements the Comparator interface.
+     */
+    static class MedicationComparator implements Comparator<String> 
+    {
         @Override
         public int compare(String entry1, String entry2) {
             String[] parts1 = entry1.split(" ");
@@ -39,6 +43,12 @@ public class Main {
         }
     }
 
+    /**
+     * Processes a file line by line and performs operations on each line.
+     *
+     * @param filePath the path of the file to be processed
+     * @param outputPath the output path of the processed file
+     */
     public static void processFile(String filePath, String outputPath)
     {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
@@ -47,8 +57,7 @@ public class Main {
             BinaryTree btsStorage = new BinaryTree();
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
             Calendar calendar = Calendar.getInstance();
-            List<Commande> commandeList = new ArrayList<Commande>();
-            Map<String, Integer> commandeMap = new HashMap<>();
+            TreeMap<String, Integer> commandeTree = new TreeMap<>();
             Date currentDate = calendar.getTime();
             int prescriptionNum = 1;
             String line;
@@ -72,20 +81,19 @@ public class Main {
                         String formattedDate = format.format(currentDate);
                         // Remove all expired nodes
                         btsStorage.removeExpiredNodes(currentDate);
-                        if (commandeMap.size() == 0)
+                        if (commandeTree.size() == 0)
                         {
                             bufferedWriter.write(formattedDate + " OK\n");
                         }
                         else
                         {
                             bufferedWriter.write(formattedDate + " COMMANDES :\n");
-                            Map<String, Integer> sortedMap = new TreeMap<>(commandeMap);
-                            for (Map.Entry<String, Integer> entry : sortedMap.entrySet()) 
+                            for (Map.Entry<String, Integer> entry : commandeTree.entrySet()) 
                             {
                                 bufferedWriter.write(entry.getKey() + " " + entry.getValue() + "\n");
                             }
-                            // Clear the Command Map
-                            commandeMap.clear();
+
+                            commandeTree.clear();
                         }
 
                     } catch (ParseException e)
@@ -102,13 +110,12 @@ public class Main {
                     strOutput = btsStorage.traverseInOrder(btsStorage.root, strOutput, currentDate);
                     bufferedWriter.write("STOCK " + format.format(currentDate) + "\n");
                     String[] splitArray = strOutput.split("\n");
-                    Arrays.sort(splitArray);
+                    Arrays.sort(splitArray); // Time complexity is O(nlogn)
                     Arrays.sort(splitArray, new MedicationComparator());
                     for (String element : splitArray) {
                         bufferedWriter.write(element + "\n");
                     }
                     
-
                 }
                 else if (line.contains("PRESCRIPTION"))
                 {
@@ -152,14 +159,14 @@ public class Main {
                     else
                     {
                         // Check if name already in list and add onto it
-                        if (commandeMap.containsKey(commObj.Name))
+                        if (commandeTree.containsKey(commObj.Name))
                         {
-                            int newCommandeValue = commandeMap.get(commObj.Name) + commObj.Quantity;
-                            commandeMap.put(commObj.Name, newCommandeValue);
+                            int newCommandeValue = commandeTree.get(commObj.Name) + commObj.Quantity;
+                            commandeTree.put(commObj.Name, newCommandeValue);
                         }
                         else
                         {
-                            commandeMap.put(commObj.Name, commObj.Quantity);
+                            commandeTree.put(commObj.Name, commObj.Quantity);
                         }
 
                         bufferedWriter.write(commObj.Name + " " + parts[1] + " " + parts[2] + "  " + "COMMANDE\n");
@@ -191,20 +198,10 @@ public class Main {
                     Node foundNode = btsStorage.containsNode(ExpireDate);
                     if (foundNode != null)
                     {
-                        // If in tree, append the Medication to the medinfo object
-                        foundNode.medicationStores.add(medObj.medicationStores.get(0));
-                        // Sort the list of medObj objects based on the Date parameter
-                        //foundNode.medicationStores.sort(new Comparator<Medication>()
-                        // {
-                        //     @Override
-                        //     public int compare(Medication obj1, Medication obj2) {
-                        //         return obj1.ExpireDate.compareTo(obj2.ExpireDate);
-                        //     }
-                        // });
+                        foundNode.medicationStores.add(medObj.medicationStores.get(0)); // O(1)
                     }
                     else
                     {
-                        //btsStorage.add(medinfoObj);
                         btsStorage.addBalanced(medObj);
                     }
 
@@ -220,6 +217,12 @@ public class Main {
 
     }
 
+    /**
+     * Perform program input checking
+     *
+     * @param  args    the program arguments
+     * @return         nothing
+     */
     public static void main(String[] args) {
         // Perform program input checking
         if (args.length != 2)
@@ -242,15 +245,7 @@ public class Main {
             return;
         }
 
-        // long startTime = System.nanoTime(); // Start timer (uncomment this for timer)
-
         processFile(fileFullPath.toString(), outputFileStr);
 
-
-        // // Uncomment lines below for timer
-        // long endTime = System.nanoTime(); // End timer
-        // long elapsedTime = endTime - startTime;
-        // double elapsedTimeInSeconds = elapsedTime / 1_000_000_000.0;
-        // System.out.println("Terminated in " + elapsedTimeInSeconds + " seconds");
     }
 }

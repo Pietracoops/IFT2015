@@ -3,25 +3,47 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class BinaryTree {
+public class BinaryTree 
+{
     Node root;
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
 
-    private int height(Node node) {
+    /**
+     * Calculates the height of a given node in a binary tree.
+     *
+     * @param  node  the node whose height needs to be calculated
+     * @return       the height of the node
+     */
+    private int height(Node node) 
+    {
         if (node == null) {
             return 0;
         }
         return node.height;
     }
 
-    private int getBalanceFactor(Node node) {
+    /**
+     * Calculates the balance factor of a given node in a binary tree.
+     *
+     * @param  node  the node whose balance factor is to be calculated
+     * @return       the balance factor of the node
+     */
+    private int getBalanceFactor(Node node) 
+    {
         if (node == null) {
             return 0;
         }
         return height(node.left) - height(node.right);
     }
 
-    private Node rotateLeft(Node node) {
+    /**
+     * Rotates the given node to the left.
+     *
+     * @param  node  the node to be rotated
+     * @return       the new root node after rotation
+     */
+    private Node rotateLeft(Node node) 
+    {
         Node newRoot = node.right;
         Node leftChildOfNewRoot = newRoot.left;
 
@@ -36,6 +58,12 @@ public class BinaryTree {
         return newRoot;
     }
 
+    /**
+     * Rotates the given node to the right.
+     *
+     * @param  node  the node to be rotated
+     * @return       the new root node after rotation
+     */
     private Node rotateRight(Node node)
     {
         Node newRoot = node.left;
@@ -52,6 +80,13 @@ public class BinaryTree {
         return newRoot;
     }
 
+    /**
+     * Adds a node to the binary search tree in a balanced manner.
+     *
+     * @param  node       the root node of the binary search tree
+     * @param  nodeToAdd  the node to add to the binary search tree
+     * @return            the root node of the modified binary search tree
+     */
     private Node addRecursiveBalanced(Node node, Node nodeToAdd) 
     {
         if (node == null) 
@@ -101,12 +136,25 @@ public class BinaryTree {
         return node;
     }
 
+    /**
+     * Entry point for the addRecursiveBalanced function.
+     *
+     * @param  node  the node to be added to the tree
+     */
     public void addBalanced(Node node) 
     {
         root = addRecursiveBalanced(root, node);
     }
 
-    private Node containsNodeNameRecursive(Node current, String name) {
+    /**
+     * Recursive function to check if a given node contains a specific node name.
+     *
+     * @param  current  the current node being checked
+     * @param  name     the name of the node to search for
+     * @return          the node that contains the specified name, or null if not found
+     */
+    private Node containsNodeNameRecursive(Node current, String name) 
+    {
         if (current == null) {
             return null;
         }
@@ -136,12 +184,26 @@ public class BinaryTree {
         return null;
     }
 
-    public Node containsNodeName(String name) {
+    /**
+     * Entry point for the containsNodeNameRecursive function.
+     *
+     * @param  name  name of node
+     * @return       the node that contains the specified name, or null if not found
+     */
+    public Node containsNodeName(String name) 
+    {
         return containsNodeNameRecursive(root, name);
     }
 
-
-    private Node containsNodeRecursive(Node current, Date expiredate) {
+    /**
+     * Recursively searches for a node in the tree that has the specified expire date.
+     *
+     * @param  current     the current node being examined
+     * @param  expiredate  the expire date to search for
+     * @return             the node with the specified expire date, or null if not found
+     */
+    private Node containsNodeRecursive(Node current, Date expiredate) 
+    {
         if (current == null) {
             return null;
         }
@@ -165,15 +227,31 @@ public class BinaryTree {
         return null;
     }
 
+    /**
+     * Retrieves the node containing the given expiration date in the binary tree.
+     *
+     * @param  expiredate  the expiration date to search for
+     * @return             the node containing the expiration date, or null if not found
+     */
     public Node containsNode(Date expiredate) {
         return containsNodeRecursive(root, expiredate);
     }
 
-    private boolean processNodeRecursive(Node current, String name, int quantity, Date requiredDate, Date currentDate) {
+    /**
+     * Process a node recursively to search for a medication and update its quantity.
+     *
+     * @param  current         the current node in the search tree
+     * @param  name            the name of the medication to search for
+     * @param  quantity        the quantity of medication to update
+     * @param  requiredDate    the required date for the medication
+     * @param  currentDate     the current date
+     * @return                 true if the medication is found and updated, false otherwise
+     */
+    private boolean processNodeRecursive(Node current, String name, int quantity, Date requiredDate, Date currentDate) 
+    {
         if (current == null) {
             return false;
         }
-
         if (requiredDate.before(current.ExpireDate) || requiredDate.equals(current.ExpireDate)) 
         {
             // We can start searching for the drug
@@ -199,23 +277,17 @@ public class BinaryTree {
                             return true;
                         }
                     }
-
                 }
-
             }
-
             // We can search left and right
-
             if (processNodeRecursive(current.left, name, quantity, requiredDate, currentDate))
             {
                 return true;
             }
-
             if (processNodeRecursive(current.right, name, quantity, requiredDate, currentDate))
             {
                 return true;
             }
-
         }
         else
         {
@@ -229,14 +301,40 @@ public class BinaryTree {
         return false;
     }
 
-    public boolean processNode(String name, int quantity, Date requiredDate, Date currentDate) {
+    /**
+     * Process the node with the given parameters.
+     *
+     * @param  name           the name of the node
+     * @param  quantity       the quantity of the node
+     * @param  requiredDate   the required date for the node
+     * @param  currentDate    the current date
+     * @return                true if the node is processed successfully, false otherwise
+     */
+    public boolean processNode(String name, int quantity, Date requiredDate, Date currentDate) 
+    {
         return processNodeRecursive(root, name, quantity, requiredDate, currentDate);
     }
 
-    private Date findSmallestValue(Node root) {
+    /**
+     * Finds the smallest value in a binary tree.
+     *
+     * @param  root  the root node of the binary tree
+     * @return       the smallest value in the binary tree
+     */
+    private Date findSmallestValue(Node root) 
+    {
         return root.left == null ? root.ExpireDate : findSmallestValue(root.left);
     }
-    private Node deleteRecursive(Node current, Date value) {
+
+    /**
+     * Deletes a node from the binary search tree recursively.
+     *
+     * @param  current   the current node in the binary search tree
+     * @param  value     the value to be deleted
+     * @return           the updated binary search tree after deletion
+     */
+    private Node deleteRecursive(Node current, Date value) 
+    {
         if (current == null) {
             return null;
         }
@@ -265,12 +363,25 @@ public class BinaryTree {
         return current;
     }
 
-    public void delete(Date value) {
+    /**
+     * Entry point for the deleteRecursive function, Deletes a value from the binary search tree.
+     *
+     * @param  value the value to be deleted
+     * @return       void
+     */
+    public void delete(Date value) 
+    {
         root = deleteRecursive(root, value);
     }
 
-
-    private Node findSuccessor(Node node) {
+    /**
+     * Find the successor node of the given node.
+     *
+     * @param  node  the node for which to find the successor
+     * @return       the successor node
+     */
+    private Node findSuccessor(Node node) 
+    {
         Node current = node;
         while (current.left != null) {
             current = current.left;
@@ -278,25 +389,13 @@ public class BinaryTree {
         return current;
     }
 
-    private Node deleteNode(Node node) 
-    {
-        if (node.left == null)
-        {
-            return node.right;
-        } else if (node.right == null) 
-        {
-            return node.left;
-        } else {
-            node = findSuccessor(node.right);
-            if (node.right != null)
-            {
-                node.right = deleteNode(node.right);
-            }
-
-        }
-        return node;
-    }
-
+    /**
+     * Deletes all nodes in the binary tree that have a date before the specified value date.
+     *
+     * @param  current      the current node being processed
+     * @param  valueDate    the date to compare with the node's date
+     * @return              the modified binary tree after deletion
+     */
     private Node deleteAllBeforeRecursive(Node current, Date valueDate) 
     {
         if (current == null) {
@@ -314,12 +413,24 @@ public class BinaryTree {
         return current;
     }
 
-
+    /**
+     * Removes all expired nodes from the tree starting from the root node.
+     *
+     * @param  value  the date used to determine which nodes are expired
+     */
     public void removeExpiredNodes(Date value) 
     {
         root = deleteAllBeforeRecursive(root, value);
     }
 
+    /**
+     * Traverses a binary tree in order and generates a string output of medication store information.
+     *
+     * @param  node         the root node of the binary tree
+     * @param  strOutput    the current string output
+     * @param  currentDate  the current date for comparison with medication expiration dates
+     * @return              the updated string output after traversing the binary tree
+     */
     public String traverseInOrder(Node node, String strOutput, Date currentDate) {
         if (node != null) 
         {
@@ -347,23 +458,5 @@ public class BinaryTree {
         }
         return strOutput;
     }
-
-//    public void traversePreOrder(Node node) {
-//        if (node != null) {
-//            System.out.print(" " + node.MedicationNumber);
-//            traversePreOrder(node.left);
-//            traversePreOrder(node.right);
-//        }
-//    }
-//
-//    public void traversePostOrder(Node node) {
-//        if (node != null) {
-//            traversePostOrder(node.left);
-//            traversePostOrder(node.right);
-//            System.out.print(" " + node.MedicationNumber);
-//        }
-//    }
-
-
 
 }
