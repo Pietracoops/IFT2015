@@ -14,11 +14,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Map;
-import java.util.Comparator;
 import java.util.*;
 
 public class Tp3 {
-
 
     /**
      * Processes a file line by line and performs operations on each line.
@@ -31,7 +29,6 @@ public class Tp3 {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             FileWriter fileWriter = new FileWriter(outputPath);
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-            
 
             ArrayList<String> vertices = new ArrayList<String>();
             ArrayList<Edge> edges = new ArrayList<Edge>();
@@ -39,6 +36,7 @@ public class Tp3 {
             int mode = 0;
             while ((line = reader.readLine()) != null) 
             {
+                line = line.replace(";", "");
                 if (line.contains("---"))
                 {
                     if (mode == 1) break;
@@ -49,19 +47,17 @@ public class Tp3 {
                 switch (mode)
                 {
                     case 0:
+                        line = line.replaceAll("\\s", "");
                         vertices.add(line);
                         break;
                     case 1:
                         // Parse the line
-                        // Edge edge = new Edge(vertex0, vertex1, weight);
                         // rue0 : a b 4 ; 
                         String[] parts = line.split(" ");
-                        //System.out.println(line);
-                        //System.out.println(parts[0]);
-                        //System.out.println(parts[1]);
-                        //System.out.println(parts[2]);
-                        //System.out.println(parts[3]);
-                        //System.out.println(parts[4]);
+                        // Remove all empty spaces
+                        List<String> tmpList = new ArrayList<>(Arrays.asList(parts));
+                        tmpList.removeIf(String::isEmpty);
+                        parts = tmpList.toArray(new String[0]);
                         Edge edgeObj = new Edge(parts[0], parts[2], parts[3], Integer.parseInt(parts[4]));
                         edges.add(edgeObj);
                         break;
@@ -69,7 +65,25 @@ public class Tp3 {
             }
 
             Carte carte = new Carte(vertices);
-            for (Edge edge : edges) carte.addRue(edge);     
+            for (Edge edge : edges) carte.addRue(edge);
+
+            List<Edge> mst = carte.primJarnikAlgorithm();
+            Collections.sort(mst, Edge.vertexComparator);
+
+            for (String vertex : vertices)
+            {
+                bufferedWriter.write(vertex + "\n");
+            }
+
+            // Print the minimum spanning tree
+            int totalWeight = 0;
+            for (Edge edge : mst)
+            {
+                bufferedWriter.write(edge.getName() + "\t" + edge.getVertex0() + "\t" + edge.getVertex1() + "\t" + edge.getWeight() + "\n");
+                totalWeight += edge.getWeight();
+            }
+            bufferedWriter.write("---\n");
+            bufferedWriter.write(totalWeight + "\n");
 
             bufferedWriter.close();
         } catch (IOException e) {
@@ -101,7 +115,8 @@ public class Tp3 {
         File inputFileObj = new File(fileFullPath.toString());
 
         // Check if input file exists
-        if (!inputFileObj.exists()) {
+        if (!inputFileObj.exists())
+        {
             System.out.println(inputFileStr + " does not exist. Exiting");
             return;
         }
